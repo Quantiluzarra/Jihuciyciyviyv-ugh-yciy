@@ -1,22 +1,506 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Game</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>AI Arena Online</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    h1 {
+      margin-top: 10px;
+    }
+    #gameContainer {
+      display: inline-block;
+      position: relative;
+      margin-top: 10px;
+    }
+    #gameCanvas {
+      background: #222;
+      display: block;
+      margin: 0 auto;
+      border: 2px solid #555;
+    }
+    #uiPanel {
+      margin-top: 10px;
+    }
+    #balance {
+      font-weight: bold;
+      color: #ffd700;
+    }
+    #redOdds, #blueOdds {
+      font-weight: bold;
+    }
+    .betButton {
+      padding: 6px 12px;
+      margin: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+    }
+    .redButton {
+      background-color: #e74c3c;
+      color: #fff;
+    }
+    .blueButton {
+      background-color: #3498db;
+      color: #fff;
+    }
+    .startButton {
+      background-color: #2ecc71;
+      color: #fff;
+      padding: 8px 16px;
+      margin-top: 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div id="bettingPanel">
-        <button id="betRed">Bet on Red</button>
-        <button id="betBlue">Bet on Blue</button>
-        <input id="betAmount" type="number" value="10">
-        <button id="placeBet">Place Bet</button>
-        <p id="balance">Balance: 1000</p>
-        <button id="settings">Settings</button>
-    </div>
 
-    <script src="script.js"></script>
+<h1>AI Arena Online</h1>
+
+<div id="uiPanel">
+  <div>Ваш баланс: <span id="balance">1000</span> C</div>
+  <div>
+    Коэффициенты ставок: 
+    <span>Красный: <span id="redOdds"></span></span>, 
+    <span>Синий: <span id="blueOdds"></span></span>
+  </div>
+  <div style="margin-top: 6px;">
+    Введите сумму ставки: 
+    <input id="betAmount" type="number" value="100" min="1" style="width:80px;text-align:center;" />
+  </div>
+  <div style="margin-top: 6px;">
+    <button class="betButton redButton" onclick="betOn('red')">Поставить на Красного</button>
+    <button class="betButton blueButton" onclick="betOn('blue')">Поставить на Синего</button>
+  </div>
+  <div style="margin-top: 6px;">
+    <button class="startButton" id="startGameBtn" onclick="startGame()">Сделать ставку и начать бой</button>
+  </div>
+</div>
+
+<div id="gameContainer">
+  <canvas id="gameCanvas" width="640" height="640"></canvas>
+</div>
+
+<script>
+// ----------------------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ -----------------------
+
+// Размер сетки
+const GRID_WIDTH  = 20;
+const GRID_HEIGHT = 20;
+const CELL_SIZE   = 32;  // Пиксели на одну ячейку
+
+// Игровые объекты (ИИ)
+let redAI = null;
+let blueAI = null;
+
+// Массив, отвечающий за цвет ячеек: 0 - ничья, 1 - красный, 2 - синий
+let grid = [];
+
+// Интервал обновления
+let gameInterval = null;
+let gameRunning = false;
+
+// Баланс игрока и система ставок
+let playerBalance = 1000;
+let betTeam = null;     // 'red' или 'blue'
+let betValue = 0;       // Сумма, которую игрок поставил
+let redOddsValue  = 1.5; // Коэффициент для Красного
+let blueOddsValue = 1.5; // Коэффициент для Синего
+
+// Ссылка на canvas/контекст
+const canvas  = document.getElementById('gameCanvas');
+const ctx     = canvas.getContext('2d');
+
+// Для отображения эмоций: будем хранить их до небольшого времени
+let emojiList = [];
+
+// ----------------------- ФУНКЦИИ СТАВОК -----------------------
+function betOn(team) {
+  if (gameRunning) return; // Нельзя менять ставку во время боя
+  
+  const inputEl = document.getElementById('betAmount');
+  const amount  = parseInt(inputEl.value);
+  
+  if (amount <= 0 || isNaN(amount)) {
+    alert('Неверная сумма ставки!');
+    return;
+  }
+  if (amount > playerBalance) {
+    alert('Недостаточно средств для такой ставки!');
+    return;
+  }
+  
+  betTeam = team;
+  betValue = amount;
+  
+  // Для наглядности подсветим выбранную ставку
+  alert(`Ставка ${betValue} C на ${team === 'red' ? 'Красного' : 'Синего'}.`);
+}
+
+// ----------------------- СТАРТ/РЕСТАРТ ИГРЫ -----------------------
+function startGame() {
+  if (gameRunning) return; // Если игра уже идёт
+  
+  if (!betTeam) {
+    alert('Сначала выберите, на кого ставите!');
+    return;
+  }
+  if (betValue <= 0) {
+    alert('Сумма ставки должна быть больше 0!');
+    return;
+  }
+  if (betValue > playerBalance) {
+    alert('Недостаточно средств!');
+    return;
+  }
+  
+  // Списываем ставку
+  playerBalance -= betValue;
+  updateUI();
+  
+  // Генерируем (или перегенерируем) коэффициенты заново, 
+  // чтобы каждый бой имел некоторую вариативность
+  redOddsValue  = (1.2 + Math.random() * 1.0).toFixed(2);  // от ~1.2 до ~2.2
+  blueOddsValue = (1.2 + Math.random() * 1.0).toFixed(2);
+  document.getElementById('redOdds').innerText  = redOddsValue;
+  document.getElementById('blueOdds').innerText = blueOddsValue;
+  
+  initGame();
+  
+  // Запускаем цикл игры
+  gameRunning = true;
+  gameInterval = setInterval(gameLoop, 400); // обновление ~2-3 раза в секунду
+}
+
+// Инициализация новой игры
+function initGame() {
+  // Обнуляем сетку
+  grid = [];
+  for (let y = 0; y < GRID_HEIGHT; y++) {
+    let row = [];
+    for (let x = 0; x < GRID_WIDTH; x++) {
+      row.push(0);
+    }
+    grid.push(row);
+  }
+  
+  // Создаём Красного ИИ
+  redAI = {
+    x: 0,
+    y: 0,
+    hp: 100,
+    color: 'red',
+    baseX: 0,
+    baseY: 0,
+    memory: {},     // Для упрощённой "памяти" ходов
+    lastAction: null,
+    type: 1
+  };
+  // Создаём Синего (голубого) ИИ
+  blueAI = {
+    x: GRID_WIDTH - 1,
+    y: GRID_HEIGHT - 1,
+    hp: 100,
+    color: 'blue',
+    baseX: GRID_WIDTH - 1,
+    baseY: GRID_HEIGHT - 1,
+    memory: {},
+    lastAction: null,
+    type: 2
+  };
+  
+  // Обозначаем базы
+  grid[redAI.y][redAI.x]   = 1; // красная база
+  grid[blueAI.y][blueAI.x] = 2; // синяя база
+  
+  // Сброс эмоций
+  emojiList = [];
+  
+  // Первый рендер
+  render();
+}
+
+// ----------------------- ОБНОВЛЕНИЕ UI -----------------------
+function updateUI() {
+  document.getElementById('balance').innerText = playerBalance;
+  document.getElementById('redOdds').innerText  = redOddsValue;
+  document.getElementById('blueOdds').innerText = blueOddsValue;
+}
+
+// ----------------------- ИГРОВОЙ ЦИКЛ -----------------------
+function gameLoop() {
+  // 1. Ход Красного
+  makeAIMove(redAI, blueAI);
+  // 2. Ход Синего
+  makeAIMove(blueAI, redAI);
+  
+  // 3. Проверка состояний (убита база или HP)
+  checkWinCondition();
+  
+  // 4. Рисуем
+  render();
+}
+
+// ----------------------- "ИНТЕЛЛЕКТ" ИИ -----------------------
+function makeAIMove(ai, opponent) {
+  if (ai.hp <= 0) return; // уже проиграл
+  
+  // Пример простого подхода к "обучению":
+  // ai.memory = { stateKey: { up: score, down: score, left: score, right: score } }
+  // stateKey можно сильно упростить, напр. учитывать лишь относительное положение соперника.
+  
+  const dx = opponent.x - ai.x;
+  const dy = opponent.y - ai.y;
+  
+  // Формируем ключ состояния:
+  // Например, "dx,dy"
+  const stateKey = dx + ',' + dy;
+  
+  if (!ai.memory[stateKey]) {
+    ai.memory[stateKey] = {
+      up: 0,
+      down: 0,
+      left: 0,
+      right: 0
+    };
+  }
+  
+  // Составим список возможных ходов
+  const possibleMoves = [];
+  
+  // Мы можем двигаться: вверх, вниз, влево, вправо (если не выйдем за границы)
+  // Добавим каждому направлению "вес", основанный на памяти и небольшом рандоме
+  const mem = ai.memory[stateKey];
+  
+  function pushMove(name, px, py) {
+    if (ai.x + px >= 0 && ai.x + px < GRID_WIDTH &&
+        ai.y + py >= 0 && ai.y + py < GRID_HEIGHT) {
+      // Вес = значение из памяти + небольшой рандом
+      const weight = mem[name] + Math.random() * 1.0;
+      possibleMoves.push({ name, px, py, weight });
+    }
+  }
+  
+  pushMove('up',    0, -1);
+  pushMove('down',  0,  1);
+  pushMove('left', -1,  0);
+  pushMove('right',1,  0);
+  
+  // Выбираем направление с максимальным "весом"
+  possibleMoves.sort((a, b) => b.weight - a.weight);
+  const bestMove = possibleMoves[0];
+  
+  // Сохраним действие, чтобы потом понять, было ли оно успешным
+  ai.lastAction = {
+    stateKey: stateKey,
+    direction: bestMove.name
+  };
+  
+  // Двигаемся
+  const oldX = ai.x;
+  const oldY = ai.y;
+  
+  ai.x += bestMove.px;
+  ai.y += bestMove.py;
+  
+  // Если вошли на клетку противника, запускаем битву
+  if (ai.x === opponent.x && ai.y === opponent.y && opponent.hp > 0) {
+    // Случайная потеря HP у обоих
+    const dmgAI       = Math.floor(Math.random() * 20); 
+    const dmgOpponent = Math.floor(Math.random() * 20);
+    ai.hp       = Math.max(0, ai.hp - dmgAI);
+    opponent.hp = Math.max(0, opponent.hp - dmgOpponent);
+    
+    // Покажем эмоции
+    showEmoji(ai, '💥');
+    showEmoji(opponent, '💥');
+    
+    // Оценим, насколько ход оказался "выгодным" (микро-обучение)
+    // Например, если мы сами потеряли меньше HP, чем враг — считаем это успехом
+    const reward = (dmgOpponent - dmgAI);
+    mem[bestMove.name] += reward * 0.1; 
+  }
+  
+  // Захватываем клетку
+  const oldControl = grid[ai.y][ai.x];
+  if (oldControl !== ai.type) {
+    // Если перезахватили клетку противника — это успех
+    if (oldControl !== 0 && oldControl !== ai.type) {
+      showEmoji(ai, '😎'); 
+      // Считаем, что это хороший ход
+      mem[bestMove.name] += 0.5;
+      
+      // Противник "злится"
+      if (opponent.hp > 0) {
+        showEmoji(opponent, '😡');
+      }
+    }
+    
+    grid[ai.y][ai.x] = ai.type;
+  }
+}
+
+// ----------------------- ПРОВЕРКА ПОБЕДЫ -----------------------
+function checkWinCondition() {
+  // Если база Красного захвачена Синим
+  if (grid[redAI.baseY][redAI.baseX] === 2 || redAI.hp <= 0) {
+    endGame('blue');
+  }
+  // Если база Синего захвачена Красным
+  else if (grid[blueAI.baseY][blueAI.baseX] === 1 || blueAI.hp <= 0) {
+    endGame('red');
+  }
+}
+
+// ----------------------- ЗАВЕРШЕНИЕ ИГРЫ -----------------------
+function endGame(winner) {
+  if (!gameRunning) return;
+  
+  clearInterval(gameInterval);
+  gameRunning = false;
+  
+  // Определяем, выиграл ли игрок
+  if (winner === betTeam) {
+    // Выплата
+    let odds = (winner === 'red') ? parseFloat(redOddsValue) : parseFloat(blueOddsValue);
+    const winAmount = Math.floor(betValue * odds);
+    playerBalance += winAmount;
+    alert(`Победил ${winner === 'red' ? 'Красный' : 'Синий'}! Вы выиграли ${winAmount} C!`);
+  } else {
+    alert(`Победил ${winner === 'red' ? 'Красный' : 'Синий'}! Вы проиграли ставку.`);
+  }
+  
+  // Сброс ставки
+  betTeam = null;
+  betValue = 0;
+  updateUI();
+}
+
+// ----------------------- ОТОБРАЖЕНИЕ ЭМОЦИЙ -----------------------
+function showEmoji(ai, symbol) {
+  emojiList.push({
+    x: ai.x,
+    y: ai.y,
+    symbol: symbol,
+    time: Date.now(),
+    aiType: ai.type
+  });
+}
+
+// ----------------------- РЕНДЕР -----------------------
+function render() {
+  // Очищаем
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Рисуем клетки
+  for (let y = 0; y < GRID_HEIGHT; y++) {
+    for (let x = 0; x < GRID_WIDTH; x++) {
+      let color = '#444';
+      if (grid[y][x] === 1) {
+        color = 'red';
+      } else if (grid[y][x] === 2) {
+        color = 'blue';
+      }
+      
+      ctx.fillStyle = color;
+      ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+    }
+  }
+  
+  // Рисуем ИИ как квадраты с обводкой
+  drawAI(redAI);
+  drawAI(blueAI);
+  
+  // Рисуем полоски HP
+  drawHPBar(redAI);
+  drawHPBar(blueAI);
+  
+  // Рисуем эмоции
+  drawEmojis();
+}
+
+function drawAI(ai) {
+  if (ai.hp <= 0) return; // Мёртвый не рисуем, или можно нарисовать тёмный
+  
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  
+  // Координаты верхнего левого угла
+  const px = ai.x * CELL_SIZE;
+  const py = ai.y * CELL_SIZE;
+  
+  ctx.strokeRect(px + 2, py + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+}
+
+function drawHPBar(ai) {
+  // Координаты над клеткой
+  const barWidth  = CELL_SIZE - 4;
+  const barHeight = 5;
+  
+  const px = ai.x * CELL_SIZE + 2;
+  const py = ai.y * CELL_SIZE - 8; // чуть выше
+  
+  // Рамка
+  ctx.fillStyle = '#000';
+  ctx.fillRect(px, py, barWidth, barHeight);
+  
+  // Заполненная часть
+  const hpPercent = ai.hp / 100;
+  let color = (ai.color === 'red') ? '#ff5555' : '#55aaff';
+  ctx.fillStyle = color;
+  ctx.fillRect(px, py, barWidth * hpPercent, barHeight);
+}
+
+function drawEmojis() {
+  // Показываем эмоции в течение ~1.5 секунд
+  const now = Date.now();
+  emojiList = emojiList.filter(e => now - e.time < 1500);
+  
+  ctx.font = '20px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  for (let emo of emojiList) {
+    const t = (now - emo.time) / 1500;
+    // t идёт от 0 до 1, можно при желании сделать анимацию смещения/прозрачности
+    const alpha = 1 - t;
+    
+    ctx.globalAlpha = alpha;
+    const px = emo.x * CELL_SIZE + CELL_SIZE / 2;
+    const py = emo.y * CELL_SIZE - 20; // чуть выше клетки
+    ctx.fillText(emo.symbol, px, py);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Изначально обновим UI и коэффициенты
+updateUI();
+
+// Случайная инициализация коэффициентов при загрузке
+redOddsValue  = (1.2 + Math.random() * 1.0).toFixed(2);
+blueOddsValue = (1.2 + Math.random() * 1.0).toFixed(2);
+document.getElementById('redOdds').innerText  = redOddsValue;
+document.getElementById('blueOdds').innerText = blueOddsValue;
+
+// При желании можно сразу вызвать initGame(), 
+// но тогда бой начнётся только по нажатию "Сделать ставку и начать бой".
+// initGame();
+
+</script>
 </body>
 </html>
