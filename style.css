@@ -1,0 +1,29 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#gameCanvas {
+    border: 1px solid black;
+}
+
+#bettingPanel {
+    margin-top: 20px;
+}
+
+button {
+    margin: 5px;
+}
+
+#settingsPanel {
+    display: none;
+    position: absolute;
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+#settingsPanel select {
+    margin: 5px;
+}
