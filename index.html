@@ -1,250 +1,460 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Арена Онлайн</title>
-    <style>
-        :root {
-            --bg-color: #1a1a1a;
-            --panel-color: #2c3e50;
-            --text-color: #ffffff;
-            --accent-red: #e74c3c;
-            --accent-blue: #3498db;
-            --font-family: 'Arial', sans-serif;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Arena Online</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: var(--font-family);
-        }
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      padding: 30px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 15px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      transition: all 0.3s;
+    }
 
-        body {
-            background: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
+    #uiPanel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      padding: 20px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
 
-        .header {
-            font-size: 2.5rem;
-            color: #3498db;
-            margin-bottom: 30px;
-        }
+    .betButton, .startButton {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.3s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      cursor: pointer;
+      font-size: 16px;
+    }
 
-        .game-container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-            max-width: 1200px;
-            width: 100%;
-        }
+    .redButton {
+      background: linear-gradient(120deg, #e62e2e, #b31212);
+      color: #fff;
+    }
 
-        .control-panel {
-            background: var(--panel-color);
-            padding: 20px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
+    .blueButton {
+      background: linear-gradient(120deg, #007bff, #0056b3);
+      color: #fff;
+    }
 
-        .bet-section {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+    .startButton {
+      background: linear-gradient(120deg, #28a745, #196d36);
+      color: #fff;
+    }
 
-        input[type="number"] {
-            padding: 10px;
-            background: #34495e;
-            border: 2px solid #2c3e50;
-            border-radius: 6px;
-            color: white;
-        }
+    .betButton:hover, .startButton:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }
 
-        button {
-            padding: 10px 20px;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
+    #gameContainer {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 20px 0;
+      background: #1a1a1a;
+    }
 
-        button:hover {
-            background: #2980b9;
-        }
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
 
-        #gameCanvas {
-            border: 2px solid #34495e;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.3);
-        }
+    #logPanel {
+      max-height: 200px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.6);
+      border-radius: 8px;
+      padding: 15px;
+      color: #e8e8e8;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-top: 15px;
+    }
 
-        .log-panel {
-            max-height: 200px;
-            overflow-y: auto;
-            background: var(--panel-color);
-            padding: 15px;
-            border-radius: 8px;
-            width: 100%;
-        }
-    </style>
+    .hp-bar {
+      position: absolute;
+      height: 10px;
+      border-radius: 5px;
+      background: #222;
+    }
+
+    .hp-fill {
+      height: 100%;
+      transition: width 0.3s;
+    }
+
+    .attack-effect {
+      position: absolute;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.5); opacity: 0.8; }
+      50% { transform: scale(1.2); opacity: 0.4; }
+      100% { transform: scale(0.5); opacity: 0; }
+    }
+
+    .emoji {
+      position: absolute;
+      font-size: 24px;
+      color: #fff;
+      animation: float 2s linear infinite;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-30px); }
+    }
+  </style>
 </head>
 <body>
-    <div class="header">AI Арена Онлайн</div>
-    <div class="game-container">
-        <div class="control-panel">
-            <div class="bet-section">
-                <label>Ваш баланс: <span id="balance">10000C</span></label>
-                <input type="number" id="betAmount" placeholder="Сумма ставки" min="1">
-                <button class="red-btn" onclick="betOn('red')">Красный</button>
-                <button class="blue-btn" onclick="betOn('blue')">Синий</button>
-                <input type="number" id="odds" placeholder="Коэффициент (1-20)" min="1" max="20">
-                <button onclick="startGame()">Сделать ставку</button>
-            </div>
+  <div class="container">
+    <h1>AI Arena Online</h1>
+    <div id="uiPanel">
+      <div class="info">
+        <div>Баланс: <span id="balance">1000</span> C</div>
+        <div>Коэффициенты: 
+          <span id="redOdds">1.50</span> / 
+          <span id="blueOdds">1.50</span>
         </div>
-        <canvas id="gameCanvas" width="640" height="640"></canvas>
-        <div class="log-panel" id="logPanel"></div>
+      </div>
+      <div class="betting">
+        <input id="betAmount" type="number" value="100" min="1" style="padding:8px; margin:5px;">
+        <button class="betButton redButton" onclick="betOn('red')">Красный</button>
+        <button class="betButton blueButton" onclick="betOn('blue')">Синий</button>
+      </div>
+      <button class="startButton" onclick="startGame()">Начать бой</button>
+    </div>
+    
+    <div id="gameContainer">
+      <canvas id="gameCanvas"></canvas>
     </div>
 
-    <script>
-        const GRID_SIZE = 20;
-        const CELL_SIZE = 32;
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const logPanel = document.getElementById('logPanel');
+    <div id="logPanel"></div>
+  </div>
 
-        let grid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
-        let redAI = { x: 0, y: 0, territory: 0, emotions: [] };
-        let blueAI = { x: GRID_SIZE-1, y: GRID_SIZE-1, territory: 0, emotions: [] };
-        let playerBalance = 10000;
-        let betTeam = null;
-        let betAmount = 0;
-        let odds = 1;
+<script>
+const CELL_SIZE = 32;
+const GRID_SIZE = 20;
+const MAX_HP = 100;
+const MOVE_SPEED = 0.1;
 
-        function initGame() {
-            grid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
-            redAI = { x: 0, y: 0, territory: 0, emotions: [] };
-            blueAI = { x: GRID_SIZE-1, y: GRID_SIZE-1, territory: 0, emotions: [] };
-            grid[redAI.y][redAI.x] = 1;
-            grid[blueAI.y][blueAI.x] = 2;
-        }
+let canvas = document.getElementById('gameCanvas');
+let ctx = canvas.getContext('2d');
+let logPanel = document.getElementById('logPanel');
+let gameRunning = false;
+let redAI, blueAI;
+let playerBalance = 1000;
+let betTeam = null;
+let betValue = 0;
+let redOdds = 1.5;
+let blueOdds = 1.5;
+let lastAnimationFrame = 0;
+let attackEffects = [];
+let emojis = [];
+let grid = Array.from({length: GRID_SIZE}, () => Array(GRID_SIZE).fill(0));
 
-        function betOn(team) {
-            betAmount = parseInt(document.getElementById('betAmount').value);
-            odds = parseInt(document.getElementById('odds').value);
-            if (isNaN(betAmount) || isNaN(odds) || betAmount > playerBalance) return;
-            betTeam = team;
-            playerBalance -= betAmount;
-            document.getElementById('balance').textContent = `${playerBalance}C`;
-        }
+// ИИ память
+const redMemory = JSON.parse(localStorage.getItem('redMemory')) || {};
+const blueMemory = JSON.parse(localStorage.getItem('blueMemory')) || {};
 
-        function startGame() {
-            if (!betTeam) return;
-            initGame();
-            gameLoop();
-        }
+class AI {
+  constructor(type, x, y, baseX, baseY) {
+    this.type = type;
+    this.x = x;
+    this.y = y;
+    this.baseX = baseX;
+    this.baseY = baseY;
+    this.hp = MAX_HP;
+    this.memory = type === 1 ? redMemory : blueMemory;
+    this.color = type === 1 ? '#e62e2e' : '#007bff';
+    this.target = {x, y};
+    this.lastAction = 0;
+  }
 
-        function gameLoop() {
-            updateAI(redAI, 1);
-            updateAI(blueAI, 2);
-            checkVictory();
-            render();
-            requestAnimationFrame(gameLoop);
-        }
+  decideMove(opponent) {
+    const now = performance.now();
+    if (now - this.lastAction < 800) return;
+    this.lastAction = now;
+    
+    const directions = [
+      {dx: 0, dy: -1},
+      {dx: 0, dy: 1},
+      {dx: -1, dy: 0},
+      {dx: 1, dy: 0}
+    ];
 
-        function updateAI(ai, team) {
-            const emptyCells = getEmptyNeighbors(ai.x, ai.y);
-            if (emptyCells.length > 0) {
-                const move = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-                grid[ai.y][ai.x] = team;
-                ai.x = move.x;
-                ai.y = move.y;
-                ai.territory++;
-                addEmotion(ai, team === 1 ? '😡' : '😠');
-            }
-        }
+    let bestDir = directions[0];
+    let maxScore = -Infinity;
 
-        function getEmptyNeighbors(x, y) {
-            const neighbors = [];
-            [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy]) => {
-                const nx = x + dx;
-                const ny = y + dy;
-                if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE && grid[ny][nx] === 0) {
-                    neighbors.push({ x: nx, y: ny });
-                }
-            });
-            return neighbors;
-        }
+    directions.forEach(dir => {
+      const nx = this.x + dir.dx;
+      const ny = this.y + dir.dy;
+      const key = `${nx},${ny},${opponent.x},${opponent.y},${this.hp}`;
+      const score = this.memory[key] || 0;
+      if (score > maxScore) {
+        maxScore = score;
+        bestDir = dir;
+      }
+    });
 
-        function addEmotion(ai, emoji) {
-            ai.emotions.push({ symbol: emoji, time: Date.now() });
-            ai.emotions = ai.emotions.filter(e => Date.now() - e.time < 2000);
-        }
+    const nx = this.x + bestDir.dx;
+    const ny = this.y + bestDir.dy;
+    
+    if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE) {
+      this.target.x = nx;
+      this.target.y = ny;
+      const key = `${this.x},${this.y},${opponent.x},${opponent.y},${this.hp}`;
+      this.memory[key] = (this.memory[key] || 0) + Math.random() * 0.1;
+    }
+  }
 
-        function checkVictory() {
-            if (redAI.x === blueAI.x && redAI.y === blueAI.y) {
-                endGame(redAI.territory > blueAI.territory ? 'red' : 'blue');
-            }
-        }
+  update() {
+    const dx = (this.target.x - this.x) * MOVE_SPEED;
+    const dy = (this.target.y - this.y) * MOVE_SPEED;
+    this.x += dx;
+    this.y += dy;
+    
+    if (Math.abs(this.x - this.target.x) < 0.1 &&
+        Math.abs(this.y - this.target.y) < 0.1) {
+      this.x = this.target.x;
+      this.y = this.target.y;
+    }
+  }
 
-        function endGame(winner) {
-            if (winner === betTeam) {
-                playerBalance += betAmount * odds;
-                addLog(`Вы выиграли! Ваш баланс: ${playerBalance}C`);
-            } else {
-                addLog(`Вы проиграли. Ваш баланс: ${playerBalance}C`);
-            }
-        }
+  attack(opponent) {
+    const damage = Math.floor(Math.random() * 20);
+    opponent.hp = Math.max(0, opponent.hp - damage);
+    this.hp = Math.max(0, this.hp - Math.random() * 10);
+    
+    if (damage > 0) {
+      addEmoji(this.x, this.y, '💥');
+      addEmoji(opponent.x, opponent.y, '💥');
+      attackEffects.push({
+        x: opponent.x * CELL_SIZE,
+        y: opponent.y * CELL_SIZE,
+        time: performance.now()
+      });
+    }
+  }
+}
 
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Отрисовка поля
-            grid.forEach((row, y) => {
-                row.forEach((cell, x) => {
-                    ctx.fillStyle = cell === 1 ? '#e74c3c' : cell === 2 ? '#3498db' : '#34495e';
-                    ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                });
-            });
+function initGame() {
+  canvas.width = GRID_SIZE * CELL_SIZE;
+  canvas.height = GRID_SIZE * CELL_SIZE;
+  grid = Array.from({length: GRID_SIZE}, () => Array(GRID_SIZE).fill(0));
 
-            // Отрисовка AI
-            drawAI(redAI, '#e74c3c');
-            drawAI(blueAI, '#3498db');
+  redAI = new AI(1, 0, 0, 0, 0);
+  blueAI = new AI(2, GRID_SIZE-1, GRID_SIZE-1, GRID_SIZE-1, GRID_SIZE-1);
 
-            // Отрисовка эмоций
-            redAI.emotions.forEach(e => drawEmoji(e.symbol, redAI.x, redAI.y));
-            blueAI.emotions.forEach(e => drawEmoji(e.symbol, blueAI.x, blueAI.y));
-        }
+  grid[redAI.y][redAI.x] = 1;
+  grid[blueAI.y][blueAI.x] = 2;
+}
 
-        function drawAI(ai, color) {
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(ai.x * CELL_SIZE + CELL_SIZE/2, ai.y * CELL_SIZE + CELL_SIZE/2, 12, 0, 2 * Math.PI);
-            ctx.fill();
-        }
+function update() {
+  if (!gameRunning) return;
 
-        function drawEmoji(symbol, x, y) {
-            ctx.font = '24px Arial';
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(symbol, x * CELL_SIZE + CELL_SIZE/2, y * CELL_SIZE + CELL_SIZE/2);
-        }
+  redAI.decideMove(blueAI);
+  blueAI.decideMove(redAI);
 
-        function addLog(text) {
-            const p = document.createElement('p');
-            p.textContent = text;
-            logPanel.appendChild(p);
-            logPanel.scrollTop = logPanel.scrollHeight;
-        }
-    </script>
+  redAI.update();
+  blueAI.update();
+
+  checkCollision(redAI, blueAI);
+  checkCollision(blueAI, redAI);
+
+  checkWinCondition();
+}
+
+function checkCollision(ai, opponent) {
+  const dx = Math.abs(ai.x - opponent.x);
+  const dy = Math.abs(ai.y - opponent.y);
+  if (dx < 0.5 && dy < 0.5) {
+    ai.attack(opponent);
+  }
+}
+
+function checkWinCondition() {
+  if (redAI.hp <= 0 || grid[redAI.baseY][redAI.baseX] === 2) {
+    endGame('blue');
+  } else if (blueAI.hp <= 0 || grid[blueAI.baseY][blueAI.baseX] === 1) {
+    endGame('red');
+  }
+}
+
+function endGame(winner) {
+  gameRunning = false;
+  saveMemory();
+
+  const odds = winner === 'red' ? redOdds : blueOdds;
+  const winAmount = Math.floor(betValue * odds);
+  
+  if (winner === betTeam) {
+    playerBalance += winAmount;
+    addLog(`Победа ${winner}! Вы выиграли ${winAmount} C`);
+  } else {
+    playerBalance -= betValue;
+    addLog(`Поражение! Вы проиграли ${betValue} C`);
+  }
+
+  resetBets();
+  updateUI();
+}
+
+function addLog(message) {
+  const entry = document.createElement('div');
+  entry.textContent = message;
+  logPanel.appendChild(entry);
+  logPanel.scrollTop = logPanel.scrollHeight;
+}
+
+function saveMemory() {
+  localStorage.setItem('redMemory', JSON.stringify(redMemory));
+  localStorage.setItem('blueMemory', JSON.stringify(blueAI.memory));
+}
+
+function resetBets() {
+  betTeam = null;
+  betValue = 0;
+  document.getElementById('betAmount').value = 100;
+}
+
+function updateUI() {
+  document.getElementById('balance').textContent = playerBalance;
+  document.getElementById('redOdds').textContent = (redOdds + Math.random() * 0.5).toFixed(2);
+  document.getElementById('blueOdds').textContent = (blueOdds + Math.random() * 0.5).toFixed(2);
+}
+
+function betOn(team) {
+  const amount = parseInt(document.getElementById('betAmount').value);
+  if (amount > playerBalance) return alert('Недостаточно средств');
+  
+  betTeam = team;
+  betValue = amount;
+  playerBalance -= betValue;
+  updateUI();
+}
+
+function startGame() {
+  if (!betTeam) return alert('Сделайте ставку!');
+  
+  initGame();
+  gameRunning = true;
+  requestAnimationFrame(animate);
+  addLog('Бой начался!');
+}
+
+function animate(time) {
+  if (lastAnimationFrame && time - lastAnimationFrame < 16) return;
+  lastAnimationFrame = time;
+  
+  update();
+  render();
+  if (gameRunning) requestAnimationFrame(animate);
+}
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Рисуем сетку
+  for (let y = 0; y < GRID_SIZE; y++) {
+    for (let x = 0; x < GRID_SIZE; x++) {
+      const cell = grid[y][x];
+      ctx.fillStyle = cell === 1 ? '#e62e2e' : cell === 2 ? '#007bff' : '#333';
+      ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+    }
+  }
+
+  // Рисуем ИИ
+  drawAI(redAI);
+  drawAI(blueAI);
+
+  // Эффекты атаки
+  attackEffects = attackEffects.filter(e => performance.now() - e.time < 1000);
+  attackEffects.forEach(e => {
+    const size = 20 + (performance.now() - e.time) / 5;
+    ctx.beginPath();
+    ctx.arc(e.x + CELL_SIZE/2, e.y + CELL_SIZE/2, size, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fill();
+  });
+
+  // Эмоции
+  emojis = emojis.filter(e => performance.now() - e.time < 2000);
+  emojis.forEach(e => {
+    ctx.font = '24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(e.symbol, 
+      e.x * CELL_SIZE + CELL_SIZE/2, 
+      e.y * CELL_SIZE + CELL_SIZE/2);
+  });
+}
+
+function drawAI(ai) {
+  const x = ai.x * CELL_SIZE;
+  const y = ai.y * CELL_SIZE;
+
+  ctx.fillStyle = ai.color;
+  ctx.beginPath();
+  ctx.arc(x + CELL_SIZE/2, y + CELL_SIZE/2, CELL_SIZE/2 - 4, 0, Math.PI*2);
+  ctx.fill();
+
+  // Рисуем HP
+  ctx.fillStyle = '#222';
+  ctx.fillRect(x, y - 15, CELL_SIZE, 10);
+  ctx.fillStyle = ai.hp > 50 ? '#5cb85c' : '#d9534f';
+  ctx.fillRect(x, y - 15, (ai.hp / MAX_HP) * CELL_SIZE, 10);
+}
+
+function addEmoji(x, y, symbol) {
+  emojis.push({
+    x: Math.floor(x),
+    y: Math.floor(y),
+    symbol,
+    time: performance.now()
+  });
+}
+
+// Инициализация
+updateUI();
+</script>
 </body>
 </html>
