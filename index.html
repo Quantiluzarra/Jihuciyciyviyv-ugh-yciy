@@ -1,460 +1,630 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Arena Online</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <title>AI Arena Online – Космическая арена</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-    
+    /* Общие стили и центрирование */
     body {
       margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      position: relative;
+      background: black;
       color: #fff;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      overflow-x: hidden;
     }
-
-    .container {
-      max-width: 1200px;
-      width: 100%;
-      padding: 30px;
-      background: rgba(0,0,0,0.7);
-      border-radius: 15px;
-      box-shadow: 0 0 30px rgba(0,0,0,0.5);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      transition: all 0.3s;
+    /* Canvas для космического фона */
+    #backgroundCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      background: radial-gradient(ellipse at center, #000 0%, #050505 100%);
     }
-
+    /* Основной контейнер */
+    #container {
+      position: relative;
+      max-width: 960px;
+      margin: 20px auto;
+      text-align: center;
+      z-index: 1;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin: 0 0 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+      animation: fadeIn 2s ease;
+    }
+    /* Панель ставок */
     #uiPanel {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 15px;
-      padding: 20px;
-      background: rgba(0,0,0,0.5);
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-
-    .betButton, .startButton {
-      padding: 12px 24px;
-      border: none;
+      margin-bottom: 10px;
+      padding: 10px 20px;
+      background: rgba(0, 0, 0, 0.6);
       border-radius: 8px;
-      font-weight: 600;
-      transition: all 0.3s;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      display: inline-block;
+      animation: fadeIn 2s ease;
+    }
+    #balance {
+      font-weight: bold;
+      color: #ffd700;
+    }
+    #redOdds, #blueOdds {
+      font-weight: bold;
+    }
+    input[type=number] {
+      width: 80px;
+      text-align: center;
+      padding: 4px;
+      border-radius: 4px;
+      border: none;
+      outline: none;
+      margin-top: 4px;
+    }
+    .betButton, .startButton {
+      padding: 10px 18px;
+      margin: 6px;
+      font-weight: bold;
       cursor: pointer;
-      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      transition: transform 0.1s, box-shadow 0.2s, background-color 0.2s;
     }
-
-    .redButton {
-      background: linear-gradient(120deg, #e62e2e, #b31212);
-      color: #fff;
-    }
-
-    .blueButton {
-      background: linear-gradient(120deg, #007bff, #0056b3);
-      color: #fff;
-    }
-
-    .startButton {
-      background: linear-gradient(120deg, #28a745, #196d36);
-      color: #fff;
-    }
-
     .betButton:hover, .startButton:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
-
+    .betButton:active, .startButton:active {
+      transform: scale(0.95);
+    }
+    .redButton {
+      background-color: #e74c3c;
+      color: #fff;
+    }
+    .blueButton {
+      background-color: #3498db;
+      color: #fff;
+    }
+    .startButton {
+      background-color: #2ecc71;
+      color: #fff;
+    }
+    .disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    /* Игровое поле */
     #gameContainer {
       position: relative;
-      width: 100%;
-      max-width: 800px;
-      border-radius: 10px;
-      overflow: hidden;
-      margin: 20px 0;
-      background: #1a1a1a;
-    }
-
-    #gameCanvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    #logPanel {
-      max-height: 200px;
-      overflow-y: auto;
-      background: rgba(0,0,0,0.6);
+      display: inline-block;
+      border: 4px solid #555;
       border-radius: 8px;
-      padding: 15px;
-      color: #e8e8e8;
-      font-size: 14px;
-      line-height: 1.5;
-      margin-top: 15px;
-    }
-
-    .hp-bar {
-      position: absolute;
-      height: 10px;
-      border-radius: 5px;
+      overflow: hidden;
       background: #222;
     }
-
-    .hp-fill {
-      height: 100%;
-      transition: width 0.3s;
+    canvas {
+      display: block;
     }
-
-    .attack-effect {
+    /* Панель статистики */
+    #statsPanel {
       position: absolute;
-      border: 2px solid #fff;
-      border-radius: 50%;
-      animation: pulse 1s infinite;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.9em;
     }
-
-    @keyframes pulse {
-      0% { transform: scale(0.5); opacity: 0.8; }
-      50% { transform: scale(1.2); opacity: 0.4; }
-      100% { transform: scale(0.5); opacity: 0; }
+    #statsChart {
+      display: block;
+      margin-top: 4px;
+      background: #333;
+      border: 1px solid #555;
+      border-radius: 4px;
     }
-
-    .emoji {
-      position: absolute;
-      font-size: 24px;
-      color: #fff;
-      animation: float 2s linear infinite;
-    }
-
-    @keyframes float {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(-30px); }
+    /* Анимация появления */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>AI Arena Online</h1>
+  <!-- Космический фон -->
+  <canvas id="backgroundCanvas"></canvas>
+  
+  <div id="container">
+    <h1>AI Arena Online – Космическая арена</h1>
     <div id="uiPanel">
-      <div class="info">
-        <div>Баланс: <span id="balance">1000</span> C</div>
-        <div>Коэффициенты: 
-          <span id="redOdds">1.50</span> / 
-          <span id="blueOdds">1.50</span>
-        </div>
+      <div>Ваш баланс: <span id="balance">1000</span> C</div>
+      <div>
+        Коэффициенты ставок: 
+        <span>Красный: <span id="redOdds"></span></span>, 
+        <span>Синий: <span id="blueOdds"></span></span>
       </div>
-      <div class="betting">
-        <input id="betAmount" type="number" value="100" min="1" style="padding:8px; margin:5px;">
-        <button class="betButton redButton" onclick="betOn('red')">Красный</button>
-        <button class="betButton blueButton" onclick="betOn('blue')">Синий</button>
+      <div style="margin-top: 6px;">
+        Введите сумму ставки: 
+        <input id="betAmount" type="number" value="100" min="1" />
       </div>
-      <button class="startButton" onclick="startGame()">Начать бой</button>
+      <div style="margin-top: 6px;">
+        <button class="betButton redButton" onclick="betOn('red')">Поставить на Красного</button>
+        <button class="betButton blueButton" onclick="betOn('blue')">Поставить на Синего</button>
+      </div>
+      <div style="margin-top: 6px;">
+        <button class="startButton" id="startGameBtn" onclick="startGame()">Сделать ставку и начать бой</button>
+      </div>
     </div>
     
     <div id="gameContainer">
-      <canvas id="gameCanvas"></canvas>
+      <!-- Игровой canvas с повышенным разрешением -->
+      <canvas id="gameCanvas" width="960" height="960"></canvas>
+      <!-- Панель статистики -->
+      <div id="statsPanel">
+        <div>Статистика побед</div>
+        <canvas id="statsChart" width="200" height="50"></canvas>
+      </div>
     </div>
-
-    <div id="logPanel"></div>
   </div>
 
-<script>
-const CELL_SIZE = 32;
-const GRID_SIZE = 20;
-const MAX_HP = 100;
-const MOVE_SPEED = 0.1;
+  <script>
+  /* ==================== КОСМИЧЕСКИЙ ФОН ==================== */
+  const backgroundCanvas = document.getElementById('backgroundCanvas');
+  const bgCtx = backgroundCanvas.getContext('2d');
 
-let canvas = document.getElementById('gameCanvas');
-let ctx = canvas.getContext('2d');
-let logPanel = document.getElementById('logPanel');
-let gameRunning = false;
-let redAI, blueAI;
-let playerBalance = 1000;
-let betTeam = null;
-let betValue = 0;
-let redOdds = 1.5;
-let blueOdds = 1.5;
-let lastAnimationFrame = 0;
-let attackEffects = [];
-let emojis = [];
-let grid = Array.from({length: GRID_SIZE}, () => Array(GRID_SIZE).fill(0));
-
-// ИИ память
-const redMemory = JSON.parse(localStorage.getItem('redMemory')) || {};
-const blueMemory = JSON.parse(localStorage.getItem('blueMemory')) || {};
-
-class AI {
-  constructor(type, x, y, baseX, baseY) {
-    this.type = type;
-    this.x = x;
-    this.y = y;
-    this.baseX = baseX;
-    this.baseY = baseY;
-    this.hp = MAX_HP;
-    this.memory = type === 1 ? redMemory : blueMemory;
-    this.color = type === 1 ? '#e62e2e' : '#007bff';
-    this.target = {x, y};
-    this.lastAction = 0;
+  // Установка размеров фона под размер окна
+  function resizeBackground() {
+    backgroundCanvas.width = window.innerWidth;
+    backgroundCanvas.height = window.innerHeight;
+    initBackground();
   }
+  window.addEventListener('resize', resizeBackground);
+  resizeBackground();
 
-  decideMove(opponent) {
-    const now = performance.now();
-    if (now - this.lastAction < 800) return;
-    this.lastAction = now;
-    
-    const directions = [
-      {dx: 0, dy: -1},
-      {dx: 0, dy: 1},
-      {dx: -1, dy: 0},
-      {dx: 1, dy: 0}
-    ];
+  // Массивы для звёзд, планет и комет
+  let stars = [];
+  let comets = [];
+  const numStars = 150;
 
-    let bestDir = directions[0];
-    let maxScore = -Infinity;
-
-    directions.forEach(dir => {
-      const nx = this.x + dir.dx;
-      const ny = this.y + dir.dy;
-      const key = `${nx},${ny},${opponent.x},${opponent.y},${this.hp}`;
-      const score = this.memory[key] || 0;
-      if (score > maxScore) {
-        maxScore = score;
-        bestDir = dir;
-      }
-    });
-
-    const nx = this.x + bestDir.dx;
-    const ny = this.y + bestDir.dy;
-    
-    if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE) {
-      this.target.x = nx;
-      this.target.y = ny;
-      const key = `${this.x},${this.y},${opponent.x},${opponent.y},${this.hp}`;
-      this.memory[key] = (this.memory[key] || 0) + Math.random() * 0.1;
+  function initBackground() {
+    const width = backgroundCanvas.width;
+    const height = backgroundCanvas.height;
+    stars = [];
+    for (let i = 0; i < numStars; i++) {
+      stars.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: Math.random() * 1.5 + 0.5,
+        speed: Math.random() * 0.2 + 0.05,
+        brightness: Math.random() * 0.5 + 0.5
+      });
     }
+    // Очистка комет
+    comets = [];
   }
 
-  update() {
-    const dx = (this.target.x - this.x) * MOVE_SPEED;
-    const dy = (this.target.y - this.y) * MOVE_SPEED;
-    this.x += dx;
-    this.y += dy;
-    
-    if (Math.abs(this.x - this.target.x) < 0.1 &&
-        Math.abs(this.y - this.target.y) < 0.1) {
-      this.x = this.target.x;
-      this.y = this.target.y;
-    }
-  }
-
-  attack(opponent) {
-    const damage = Math.floor(Math.random() * 20);
-    opponent.hp = Math.max(0, opponent.hp - damage);
-    this.hp = Math.max(0, this.hp - Math.random() * 10);
-    
-    if (damage > 0) {
-      addEmoji(this.x, this.y, '💥');
-      addEmoji(opponent.x, opponent.y, '💥');
-      attackEffects.push({
-        x: opponent.x * CELL_SIZE,
-        y: opponent.y * CELL_SIZE,
-        time: performance.now()
+  // Спонтанное появление комет
+  function maybeSpawnComet() {
+    if (Math.random() < 0.001) { // шанс появления
+      comets.push({
+        x: Math.random() * backgroundCanvas.width,
+        y: 0,
+        angle: Math.PI / 4 + Math.random() * 0.2, // угол движения
+        speed: Math.random() * 1 + 0.5,
+        length: Math.random() * 80 + 50,
+        opacity: 1
       });
     }
   }
-}
 
-function initGame() {
-  canvas.width = GRID_SIZE * CELL_SIZE;
-  canvas.height = GRID_SIZE * CELL_SIZE;
-  grid = Array.from({length: GRID_SIZE}, () => Array(GRID_SIZE).fill(0));
-
-  redAI = new AI(1, 0, 0, 0, 0);
-  blueAI = new AI(2, GRID_SIZE-1, GRID_SIZE-1, GRID_SIZE-1, GRID_SIZE-1);
-
-  grid[redAI.y][redAI.x] = 1;
-  grid[blueAI.y][blueAI.x] = 2;
-}
-
-function update() {
-  if (!gameRunning) return;
-
-  redAI.decideMove(blueAI);
-  blueAI.decideMove(redAI);
-
-  redAI.update();
-  blueAI.update();
-
-  checkCollision(redAI, blueAI);
-  checkCollision(blueAI, redAI);
-
-  checkWinCondition();
-}
-
-function checkCollision(ai, opponent) {
-  const dx = Math.abs(ai.x - opponent.x);
-  const dy = Math.abs(ai.y - opponent.y);
-  if (dx < 0.5 && dy < 0.5) {
-    ai.attack(opponent);
+  function updateBackground(delta) {
+    const width = backgroundCanvas.width;
+    const height = backgroundCanvas.height;
+    // Обновляем звёзды
+    stars.forEach(star => {
+      star.y += star.speed * delta * 0.05;
+      if (star.y > height) {
+        star.y = 0;
+        star.x = Math.random() * width;
+      }
+    });
+    // Обновляем кометы
+    comets.forEach(comet => {
+      comet.x += Math.cos(comet.angle) * comet.speed * delta * 0.1;
+      comet.y += Math.sin(comet.angle) * comet.speed * delta * 0.1;
+      comet.opacity -= 0.0005 * delta;
+    });
+    // Удаляем исчезнувшие кометы
+    comets = comets.filter(c => c.opacity > 0);
+    maybeSpawnComet();
   }
-}
 
-function checkWinCondition() {
-  if (redAI.hp <= 0 || grid[redAI.baseY][redAI.baseX] === 2) {
-    endGame('blue');
-  } else if (blueAI.hp <= 0 || grid[blueAI.baseY][blueAI.baseX] === 1) {
-    endGame('red');
+  function drawBackground() {
+    bgCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+    // Рисуем звёзды
+    stars.forEach(star => {
+      bgCtx.beginPath();
+      bgCtx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+      bgCtx.fillStyle = `rgba(255,255,255,${star.brightness})`;
+      bgCtx.fill();
+    });
+    // Рисуем планеты
+    drawPlanet(bgCtx, backgroundCanvas.width * 0.2, backgroundCanvas.height * 0.3, 40, "#aaf");
+    drawPlanet(bgCtx, backgroundCanvas.width * 0.8, backgroundCanvas.height * 0.7, 60, "#faa");
+    // Рисуем кометы
+    comets.forEach(comet => {
+      bgCtx.beginPath();
+      bgCtx.moveTo(comet.x, comet.y);
+      bgCtx.lineTo(comet.x - comet.length * Math.cos(comet.angle), comet.y - comet.length * Math.sin(comet.angle));
+      bgCtx.strokeStyle = `rgba(255,255,255,${comet.opacity})`;
+      bgCtx.lineWidth = 2;
+      bgCtx.stroke();
+    });
   }
-}
 
-function endGame(winner) {
-  gameRunning = false;
-  saveMemory();
+  function drawPlanet(ctx, x, y, radius, color) {
+    const grad = ctx.createRadialGradient(x, y, radius * 0.2, x, y, radius);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, 'black');
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
 
-  const odds = winner === 'red' ? redOdds : blueOdds;
-  const winAmount = Math.floor(betValue * odds);
-  
-  if (winner === betTeam) {
-    playerBalance += winAmount;
-    addLog(`Победа ${winner}! Вы выиграли ${winAmount} C`);
-  } else {
+  /* ==================== ИГРОВАЯ ЛОГИКА ==================== */
+  // Константы для игры
+  const GRID_WIDTH  = 20;
+  const GRID_HEIGHT = 20;
+  const CELL_SIZE   = 48; // 20 * 48 = 960
+
+  // Переменные статистики
+  let redWins = 0, blueWins = 0;
+  // Глобальный счетчик ходов для обучения ИИ
+  let moveCount = 0;
+
+  // Объекты ИИ (с дополнительными свойствами для анимации)
+  let redAI = null;
+  let blueAI = null;
+  // Сетка контроля территорий: 0 – ничья, 1 – красный, 2 – синий
+  let grid = [];
+  let gameRunning = false;
+  let lastTimestamp = 0;
+
+  // Система ставок
+  let playerBalance = 1000;
+  let betTeam = null;  // 'red' или 'blue'
+  let betValue = 0;
+  let redOddsValue = 1.5;
+  let blueOddsValue = 1.5;
+
+  // Canvas для игры и статистики
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const statsCanvas = document.getElementById('statsChart');
+  const statsCtx = statsCanvas.getContext('2d');
+
+  // Список эмоций
+  let emojiList = [];
+
+  /* Функции ставок */
+  function betOn(team) {
+    if (gameRunning) return;
+    const amount = parseInt(document.getElementById('betAmount').value);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Неверная сумма ставки!');
+      return;
+    }
+    if (amount > playerBalance) {
+      alert('Недостаточно средств для такой ставки!');
+      return;
+    }
+    betTeam = team;
+    betValue = amount;
+    alert(`Ставка ${betValue} C на ${team === 'red' ? 'Красного' : 'Синего'}.`);
+  }
+
+  /* Инициализация игры */
+  function initGame() {
+    // Инициализация сетки
+    grid = [];
+    for (let y = 0; y < GRID_HEIGHT; y++) {
+      const row = [];
+      for (let x = 0; x < GRID_WIDTH; x++) {
+        row.push(0);
+      }
+      grid.push(row);
+    }
+    // Создание ИИ с начальными позициями и настройками для анимации
+    redAI = {
+      gridX: 0, gridY: 0,
+      posX: 0, posY: 0,
+      targetX: 0, targetY: 0,
+      isMoving: false,
+      moveStartTime: 0,
+      startPosX: 0, startPosY: 0,
+      hp: 100,
+      color: 'red',
+      baseX: 0, baseY: 0,
+      memory: {},
+      lastAction: null,
+      type: 1
+    };
+    blueAI = {
+      gridX: GRID_WIDTH - 1, gridY: GRID_HEIGHT - 1,
+      posX: (GRID_WIDTH - 1) * CELL_SIZE, posY: (GRID_HEIGHT - 1) * CELL_SIZE,
+      targetX: (GRID_WIDTH - 1) * CELL_SIZE, targetY: (GRID_HEIGHT - 1) * CELL_SIZE,
+      isMoving: false,
+      moveStartTime: 0,
+      startPosX: (GRID_WIDTH - 1) * CELL_SIZE, startPosY: (GRID_HEIGHT - 1) * CELL_SIZE,
+      hp: 100,
+      color: 'blue',
+      baseX: GRID_WIDTH - 1, baseY: GRID_HEIGHT - 1,
+      memory: {},
+      lastAction: null,
+      type: 2
+    };
+    // Устанавливаем базы
+    grid[redAI.gridY][redAI.gridX] = 1;
+    grid[blueAI.gridY][blueAI.gridX] = 2;
+    emojiList = [];
+    updateUI();
+    render();
+  }
+
+  /* Обновление UI */
+  function updateUI() {
+    document.getElementById('balance').innerText = playerBalance;
+    document.getElementById('redOdds').innerText = redOddsValue;
+    document.getElementById('blueOdds').innerText = blueOddsValue;
+    updateStatsChart();
+  }
+
+  /* Старт игры */
+  function startGame() {
+    if (gameRunning) return;
+    if (!betTeam) {
+      alert('Сначала выберите, на кого ставите!');
+      return;
+    }
+    if (betValue <= 0 || betValue > playerBalance) {
+      alert('Неверная сумма ставки или недостаточно средств!');
+      return;
+    }
+    // Списание ставки и обновление коэффициентов
     playerBalance -= betValue;
-    addLog(`Поражение! Вы проиграли ${betValue} C`);
+    redOddsValue = (1.2 + Math.random() * 1.0).toFixed(2);
+    blueOddsValue = (1.2 + Math.random() * 1.0).toFixed(2);
+    updateUI();
+    initGame();
+    gameRunning = true;
+    lastTimestamp = performance.now();
+    requestAnimationFrame(update);
   }
 
-  resetBets();
-  updateUI();
-}
+  /* Главный цикл игры (requestAnimationFrame) */
+  function update(timestamp) {
+    const delta = timestamp - lastTimestamp;
+    lastTimestamp = timestamp;
+    // Обновляем фон
+    updateBackground(delta);
+    drawBackground();
+    // Обновляем каждый ИИ
+    [redAI, blueAI].forEach(ai => {
+      if (!ai.isMoving && ai.hp > 0) {
+        decideAIMove(ai, ai === redAI ? blueAI : redAI);
+      }
+      if (ai.isMoving) {
+        const progress = Math.min((timestamp - ai.moveStartTime) / MOVE_DURATION, 1);
+        ai.posX = ai.startPosX + (ai.targetX - ai.startPosX) * progress;
+        ai.posY = ai.startPosY + (ai.targetY - ai.startPosY) * progress;
+        if (progress >= 1) {
+          ai.gridX = Math.round(ai.targetX / CELL_SIZE);
+          ai.gridY = Math.round(ai.targetY / CELL_SIZE);
+          ai.isMoving = false;
+          processPostMove(ai, ai === redAI ? blueAI : redAI);
+          checkWinCondition();
+        }
+      }
+    });
+    updateEmojis();
+    render();
+    if (gameRunning) requestAnimationFrame(update);
+  }
+  // Длительность движения (в мс)
+  const MOVE_DURATION = 200;
 
-function addLog(message) {
-  const entry = document.createElement('div');
-  entry.textContent = message;
-  logPanel.appendChild(entry);
-  logPanel.scrollTop = logPanel.scrollHeight;
-}
+  /* Логика ИИ с накопительным фактором обучения */
+  function decideAIMove(ai, opponent) {
+    const dx = opponent.gridX - ai.gridX;
+    const dy = opponent.gridY - ai.gridY;
+    const stateKey = dx + ',' + dy;
+    if (!ai.memory[stateKey]) {
+      ai.memory[stateKey] = { up: 0, down: 0, left: 0, right: 0 };
+    }
+    const mem = ai.memory[stateKey];
+    const possibleMoves = [];
+    function tryMove(name, offsetX, offsetY) {
+      const newX = ai.gridX + offsetX, newY = ai.gridY + offsetY;
+      if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT) {
+        const weight = mem[name] + Math.random();
+        possibleMoves.push({ name, offsetX, offsetY, weight });
+      }
+    }
+    tryMove('up', 0, -1);
+    tryMove('down', 0, 1);
+    tryMove('left', -1, 0);
+    tryMove('right', 1, 0);
+    possibleMoves.sort((a, b) => b.weight - a.weight);
+    const best = possibleMoves[0];
+    // Запоминаем последнее действие
+    ai.lastAction = { stateKey: stateKey, direction: best.name };
+    // Инициируем анимацию движения
+    ai.startPosX = ai.posX;
+    ai.startPosY = ai.posY;
+    ai.targetX = (ai.gridX + best.offsetX) * CELL_SIZE;
+    ai.targetY = (ai.gridY + best.offsetY) * CELL_SIZE;
+    ai.isMoving = true;
+    ai.moveStartTime = performance.now();
+  }
 
-function saveMemory() {
-  localStorage.setItem('redMemory', JSON.stringify(redMemory));
-  localStorage.setItem('blueMemory', JSON.stringify(blueAI.memory));
-}
-
-function resetBets() {
-  betTeam = null;
-  betValue = 0;
-  document.getElementById('betAmount').value = 100;
-}
-
-function updateUI() {
-  document.getElementById('balance').textContent = playerBalance;
-  document.getElementById('redOdds').textContent = (redOdds + Math.random() * 0.5).toFixed(2);
-  document.getElementById('blueOdds').textContent = (blueOdds + Math.random() * 0.5).toFixed(2);
-}
-
-function betOn(team) {
-  const amount = parseInt(document.getElementById('betAmount').value);
-  if (amount > playerBalance) return alert('Недостаточно средств');
-  
-  betTeam = team;
-  betValue = amount;
-  playerBalance -= betValue;
-  updateUI();
-}
-
-function startGame() {
-  if (!betTeam) return alert('Сделайте ставку!');
-  
-  initGame();
-  gameRunning = true;
-  requestAnimationFrame(animate);
-  addLog('Бой начался!');
-}
-
-function animate(time) {
-  if (lastAnimationFrame && time - lastAnimationFrame < 16) return;
-  lastAnimationFrame = time;
-  
-  update();
-  render();
-  if (gameRunning) requestAnimationFrame(animate);
-}
-
-function render() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Рисуем сетку
-  for (let y = 0; y < GRID_SIZE; y++) {
-    for (let x = 0; x < GRID_SIZE; x++) {
-      const cell = grid[y][x];
-      ctx.fillStyle = cell === 1 ? '#e62e2e' : cell === 2 ? '#007bff' : '#333';
-      ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+  function processPostMove(ai, opponent) {
+    // Если в клетке противник – битва
+    if (ai.gridX === opponent.gridX && ai.gridY === opponent.gridY && opponent.hp > 0) {
+      const dmgAI = Math.floor(Math.random() * 20);
+      const dmgOpp = Math.floor(Math.random() * 20);
+      ai.hp = Math.max(0, ai.hp - dmgAI);
+      opponent.hp = Math.max(0, opponent.hp - dmgOpp);
+      showEmoji(ai, '💥');
+      showEmoji(opponent, '💥');
+      let reward = (dmgOpp - dmgAI);
+      // Если повторяется тот же ход, штраф
+      if (ai.lastAction && ai.lastAction.repeat) {
+        reward -= 2;
+      }
+      // Увеличиваем глобальный счетчик ходов и вычисляем фактор обучения (до 100×)
+      moveCount++;
+      const learningFactor = Math.min(1 + moveCount / 10, 100);
+      ai.memory[ai.lastAction.stateKey][ai.lastAction.direction] += reward * 0.1 * learningFactor;
+    }
+    // Захват территории
+    const cellControl = grid[ai.gridY][ai.gridX];
+    if (cellControl !== ai.type) {
+      if (cellControl !== 0 && cellControl !== ai.type) {
+        showEmoji(ai, '😎');
+        ai.memory[ai.lastAction.stateKey][ai.lastAction.direction] += 0.5;
+        if (opponent.hp > 0) showEmoji(opponent, '😡');
+      }
+      grid[ai.gridY][ai.gridX] = ai.type;
     }
   }
 
-  // Рисуем ИИ
-  drawAI(redAI);
-  drawAI(blueAI);
+  function checkWinCondition() {
+    if ((grid[redAI.baseY][redAI.baseX] === 2 || redAI.hp <= 0) && gameRunning) {
+      endGame('blue');
+    } else if ((grid[blueAI.baseY][blueAI.baseX] === 1 || blueAI.hp <= 0) && gameRunning) {
+      endGame('red');
+    }
+  }
 
-  // Эффекты атаки
-  attackEffects = attackEffects.filter(e => performance.now() - e.time < 1000);
-  attackEffects.forEach(e => {
-    const size = 20 + (performance.now() - e.time) / 5;
-    ctx.beginPath();
-    ctx.arc(e.x + CELL_SIZE/2, e.y + CELL_SIZE/2, size, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.fill();
-  });
+  function endGame(winner) {
+    gameRunning = false;
+    clearEmojis();
+    if (winner === betTeam) {
+      const odds = (winner === 'red') ? parseFloat(redOddsValue) : parseFloat(blueOddsValue);
+      const winAmount = Math.floor(betValue * odds);
+      playerBalance += winAmount;
+      alert(`Победил ${winner === 'red' ? 'Красный' : 'Синий'}! Вы выиграли ${winAmount} C!`);
+    } else {
+      alert(`Победил ${winner === 'red' ? 'Красный' : 'Синий'}! Вы проиграли ставку.`);
+    }
+    if (winner === 'red') redWins++; else if (winner === 'blue') blueWins++;
+    betTeam = null;
+    betValue = 0;
+    updateUI();
+  }
 
-  // Эмоции
-  emojis = emojis.filter(e => performance.now() - e.time < 2000);
-  emojis.forEach(e => {
-    ctx.font = '24px sans-serif';
+  /* Эффекты эмоций */
+  function showEmoji(ai, symbol) {
+    emojiList.push({
+      x: ai.gridX,
+      y: ai.gridY,
+      symbol: symbol,
+      time: Date.now()
+    });
+  }
+  function updateEmojis() {
+    const now = Date.now();
+    emojiList = emojiList.filter(e => now - e.time < 1500);
+  }
+  function clearEmojis() {
+    emojiList = [];
+  }
+
+  /* Рендер игры */
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Рисуем клетки
+    for (let y = 0; y < GRID_HEIGHT; y++) {
+      for (let x = 0; x < GRID_WIDTH; x++) {
+        let cellColor = '#444';
+        if (grid[y][x] === 1) cellColor = 'red';
+        else if (grid[y][x] === 2) cellColor = 'blue';
+        ctx.fillStyle = cellColor;
+        ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+      }
+    }
+    // Рисуем ИИ с анимацией
+    drawEntity(redAI);
+    drawEntity(blueAI);
+    // Рисуем полоски HP
+    drawHPBar(redAI);
+    drawHPBar(blueAI);
+    // Рисуем эмоции
+    drawEmojis();
+  }
+
+  function drawEntity(ai) {
+    if (ai.hp <= 0) return;
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(ai.posX + 2, ai.posY + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+  }
+
+  function drawHPBar(ai) {
+    const barWidth = CELL_SIZE - 4;
+    const barHeight = 5;
+    const px = ai.posX + 2;
+    const py = ai.posY - 8;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(px, py, barWidth, barHeight);
+    const hpPercent = ai.hp / 100;
+    ctx.fillStyle = (ai.color === 'red') ? '#ff5555' : '#55aaff';
+    ctx.fillRect(px, py, barWidth * hpPercent, barHeight);
+  }
+
+  function drawEmojis() {
+    ctx.font = '20px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#fff';
-    ctx.fillText(e.symbol, 
-      e.x * CELL_SIZE + CELL_SIZE/2, 
-      e.y * CELL_SIZE + CELL_SIZE/2);
-  });
-}
+    ctx.textBaseline = 'middle';
+    const now = Date.now();
+    emojiList.forEach(emo => {
+      const t = (now - emo.time) / 1500;
+      ctx.globalAlpha = 1 - t;
+      const px = emo.x * CELL_SIZE + CELL_SIZE / 2;
+      const py = emo.y * CELL_SIZE - 20;
+      ctx.fillText(emo.symbol, px, py);
+    });
+    ctx.globalAlpha = 1;
+  }
 
-function drawAI(ai) {
-  const x = ai.x * CELL_SIZE;
-  const y = ai.y * CELL_SIZE;
+  /* Рисование статистики */
+  function updateStatsChart() {
+    const total = redWins + blueWins;
+    statsCtx.clearRect(0, 0, statsCanvas.width, statsCanvas.height);
+    statsCtx.fillStyle = '#fff';
+    statsCtx.font = '12px sans-serif';
+    statsCtx.textAlign = 'center';
+    statsCtx.fillText(`Красный: ${redWins} | Синий: ${blueWins}`, statsCanvas.width / 2, 12);
+    const barX = 10, barY = 25, barW = statsCanvas.width - 20, barH = 15;
+    statsCtx.strokeStyle = '#fff';
+    statsCtx.strokeRect(barX, barY, barW, barH);
+    if (total > 0) {
+      const redWidth = barW * (redWins / total);
+      statsCtx.fillStyle = 'red';
+      statsCtx.fillRect(barX, barY, redWidth, barH);
+      statsCtx.fillStyle = 'blue';
+      statsCtx.fillRect(barX + redWidth, barY, barW - redWidth, barH);
+    }
+  }
 
-  ctx.fillStyle = ai.color;
-  ctx.beginPath();
-  ctx.arc(x + CELL_SIZE/2, y + CELL_SIZE/2, CELL_SIZE/2 - 4, 0, Math.PI*2);
-  ctx.fill();
-
-  // Рисуем HP
-  ctx.fillStyle = '#222';
-  ctx.fillRect(x, y - 15, CELL_SIZE, 10);
-  ctx.fillStyle = ai.hp > 50 ? '#5cb85c' : '#d9534f';
-  ctx.fillRect(x, y - 15, (ai.hp / MAX_HP) * CELL_SIZE, 10);
-}
-
-function addEmoji(x, y, symbol) {
-  emojis.push({
-    x: Math.floor(x),
-    y: Math.floor(y),
-    symbol,
-    time: performance.now()
-  });
-}
-
-// Инициализация
-updateUI();
-</script>
+  /* Инициализация UI и коэффициентов */
+  updateUI();
+  redOddsValue = (1.2 + Math.random() * 1.0).toFixed(2);
+  blueOddsValue = (1.2 + Math.random() * 1.0).toFixed(2);
+  document.getElementById('redOdds').innerText = redOddsValue;
+  document.getElementById('blueOdds').innerText = blueOddsValue;
+  initGame();
+  </script>
 </body>
 </html>
