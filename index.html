@@ -1,602 +1,250 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>AI ARENA ONLINE</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    /* ===== Базовый сброс и стили ===== */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: "Segoe UI", Tahoma, sans-serif;
-      background: linear-gradient(120deg, #1c1c1c, #333);
-      color: #fff;
-      text-align: center;
-      overflow-x: hidden;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    h1 { margin: 10px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-    
-    /* ===== Арена ===== */
-    .arenaContainer { margin-bottom: 20px; }
-    #gameContainer {
-      position: relative;
-      border: 2px solid #555;
-      border-radius: 8px;
-      overflow: hidden;
-      margin: 0 auto;
-    }
-    #gameCanvas { background: #222; display: block; }
-    
-    /* ===== Панель управления ===== */
-    .uiContainer {
-      max-width: 900px;
-      width: 100%;
-      background: rgba(0,0,0,0.6);
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-      margin: 0 auto 20px auto;
-    }
-    .uiRow {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      margin: 8px 0;
-    }
-    .uiRow > div, .uiRow > input, .uiRow > button {
-      margin: 6px 10px;
-    }
-    .label { font-weight: bold; color: #ffd700; }
-    input[type="number"], input[type="text"] {
-      width: 80px;
-      text-align: center;
-      padding: 4px;
-      border: 1px solid #555;
-      border-radius: 4px;
-      background: #222;
-      color: #fff;
-    }
-    button {
-      padding: 8px 16px;
-      font-weight: bold;
-      cursor: pointer;
-      border: none;
-      border-radius: 4px;
-      transition: background 0.3s, transform 0.2s;
-    }
-    button:hover { transform: scale(1.03); filter: brightness(110%); }
-    button:active { transform: scale(0.98); }
-    .redButton { background-color: #e74c3c; color: #fff; }
-    .blueButton { background-color: #3498db; color: #fff; }
-    .startButton { background-color: #2ecc71; color: #fff; }
-    
-    /* ===== Лог событий ===== */
-    #logPanel {
-      max-height: 150px;
-      overflow-y: auto;
-      background: rgba(0,0,0,0.3);
-      border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 0.9em;
-      text-align: left;
-      margin: 0 auto;
-      max-width: 900px;
-    }
-    #logPanel p { margin: 4px 0; line-height: 1.2em; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Арена Онлайн</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --panel-color: #2c3e50;
+            --text-color: #ffffff;
+            --accent-red: #e74c3c;
+            --accent-blue: #3498db;
+            --font-family: 'Arial', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-family);
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .header {
+            font-size: 2.5rem;
+            color: #3498db;
+            margin-bottom: 30px;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .control-panel {
+            background: var(--panel-color);
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .bet-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input[type="number"] {
+            padding: 10px;
+            background: #34495e;
+            border: 2px solid #2c3e50;
+            border-radius: 6px;
+            color: white;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        #gameCanvas {
+            border: 2px solid #34495e;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        .log-panel {
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--panel-color);
+            padding: 15px;
+            border-radius: 8px;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-  <!-- Арена -->
-  <div class="arenaContainer">
-    <h1>AI ARENA ONLINE</h1>
-    <div id="gameContainer">
-      <canvas id="gameCanvas" width="640" height="640"></canvas>
+    <div class="header">AI Арена Онлайн</div>
+    <div class="game-container">
+        <div class="control-panel">
+            <div class="bet-section">
+                <label>Ваш баланс: <span id="balance">10000C</span></label>
+                <input type="number" id="betAmount" placeholder="Сумма ставки" min="1">
+                <button class="red-btn" onclick="betOn('red')">Красный</button>
+                <button class="blue-btn" onclick="betOn('blue')">Синий</button>
+                <input type="number" id="odds" placeholder="Коэффициент (1-20)" min="1" max="20">
+                <button onclick="startGame()">Сделать ставку</button>
+            </div>
+        </div>
+        <canvas id="gameCanvas" width="640" height="640"></canvas>
+        <div class="log-panel" id="logPanel"></div>
     </div>
-  </div>
-  
-  <!-- Панель управления -->
-  <div class="uiContainer">
-    <div class="uiRow">
-      <div><span class="label">Баланс:</span> <span id="balance">1000</span> C</div>
-      <div><span class="label">Красный (коэф):</span> <span id="redOdds">1.50</span></div>
-      <div><span class="label">Синий (коэф):</span> <span id="blueOdds">1.50</span></div>
-    </div>
-    <div class="uiRow">
-      <div>
-        <span class="label">Ставка (C):</span>
-        <input id="betAmount" type="number" value="100" min="1" />
-      </div>
-      <div>
-        <span class="label">Win Multiplier:</span>
-        <input id="winMultiplier" type="text" value="1.0" />
-      </div>
-    </div>
-    <div class="uiRow">
-      <button class="betButton redButton" onclick="betOn('red')">Поставить на Красного</button>
-      <button class="betButton blueButton" onclick="betOn('blue')">Поставить на Синего</button>
-    </div>
-    <div class="uiRow">
-      <button class="startButton" onclick="startGame()">Сделать ставку и начать бой</button>
-    </div>
-  </div>
-  
-  <!-- Лог событий -->
-  <div id="logPanel"></div>
-  
-  <script>
-    // ---------------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ----------------
-    const GRID_WIDTH = 20;
-    const GRID_HEIGHT = 20;
-    const CELL_SIZE = 32;
-    const moveDuration = 300; // мс анимации перемещения
-    const aiThinkInterval = 400; // мс между решениями
-    const MAX_HP = 100;
-    
-    // Элементы
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const logPanel = document.getElementById('logPanel');
-    
-    // Состояния игры и ставок
-    let gameRunning = false;
-    let playerBalance = 1000;
-    let betTeam = null; // 'red' или 'blue'
-    let betValue = 0;
-    let redOddsValue = 1.5;
-    let blueOddsValue = 1.5;
-    let grid = [];
-    
-    // Объекты ИИ
-    let redAI = null;
-    let blueAI = null;
-    
-    // Таймеры для ИИ
-    let redLastThink = 0;
-    let blueLastThink = 0;
-    
-    // Эффекты эмоций
-    let emojiList = [];
-    
-    // ---------------- ПАМЯТЬ AI (localStorage) ----------------
-    let globalRedMemory = {};
-    let globalBlueMemory = {};
-    function loadAIMemory() {
-      try {
-        const redMemStr = localStorage.getItem('redAIMemory');
-        if (redMemStr) globalRedMemory = JSON.parse(redMemStr);
-        const blueMemStr = localStorage.getItem('blueAIMemory');
-        if (blueMemStr) globalBlueMemory = JSON.parse(blueMemStr);
-      } catch(e) { console.warn('Ошибка чтения localStorage:', e); }
-    }
-    function saveAIMemory() {
-      try {
-        localStorage.setItem('redAIMemory', JSON.stringify(globalRedMemory));
-        localStorage.setItem('blueAIMemory', JSON.stringify(globalBlueMemory));
-      } catch(e) { console.warn('Ошибка записи localStorage:', e); }
-    }
-    loadAIMemory();
-    
-    // ---------------- ИНИЦИАЛИЗАЦИЯ СЕТКИ ----------------
-    function initGrid() {
-      grid = [];
-      for (let y = 0; y < GRID_HEIGHT; y++) {
-        const row = [];
-        for (let x = 0; x < GRID_WIDTH; x++) {
-          row.push(0);
-        }
-        grid.push(row);
-      }
-    }
-    
-    // ---------------- СОЗДАНИЕ ОБЪЕКТА AI ----------------
-    function createAI(type, x, y, baseX, baseY, memoryObj) {
-      return {
-        type,           // 1 для красного, 2 для синего
-        x, y,           // текущие координаты
-        oldX: x, oldY: y, // для анимации
-        targetX: x, targetY: y,
-        moveStartTime: 0,
-        hp: MAX_HP,
-        baseX, baseY,
-        memory: memoryObj,
-        lastAction: null,
-        color: type === 1 ? 'red' : 'blue',
-        userControlled: false,  // флаг пользовательского управления
-        controlEndTime: 0       // время окончания пользовательского контроля
-      };
-    }
-    
-    // ---------------- UI И СТАВКИ ----------------
-    function updateUI() {
-      document.getElementById('balance').innerText = playerBalance;
-      document.getElementById('redOdds').innerText = redOddsValue;
-      document.getElementById('blueOdds').innerText = blueOddsValue;
-    }
-    function betOn(team) {
-      if (gameRunning) return alert("Нельзя менять ставку во время боя!");
-      const amount = parseInt(document.getElementById('betAmount').value);
-      if (isNaN(amount) || amount <= 0) return alert("Неверная сумма ставки!");
-      if (amount > playerBalance) return alert("Недостаточно средств!");
-      betTeam = team;
-      betValue = amount;
-      alert(`Ставка ${betValue} C на ${team === 'red' ? 'Красного' : 'Синего'}.`);
-    }
-    
-    // ---------------- ПОЛЬЗОВАТЕЛЬСКИЙ КОНТРОЛЬ AI ----------------
-    function handleUserControl(clientX, clientY) {
-      // Получаем координаты относительно canvas
-      const rect = canvas.getBoundingClientRect();
-      const x = Math.floor((clientX - rect.left) / CELL_SIZE);
-      const y = Math.floor((clientY - rect.top) / CELL_SIZE);
-      // Если пользователь нажал на клетку, где находится AI, и это AI, на которого поставлена ставка
-      let targetAI = null;
-      if (betTeam === 'red' && redAI && redAI.x === x && redAI.y === y) {
-        targetAI = redAI;
-      } else if (betTeam === 'blue' && blueAI && blueAI.x === x && blueAI.y === y) {
-        targetAI = blueAI;
-      }
-      if (targetAI) {
-        targetAI.userControlled = true;
-        targetAI.controlEndTime = performance.now() + 5000; // 5 секунд контроля
-        addLog(`Пользовательский контроль: ${targetAI.color} AI подчиняется!`);
-      } else {
-        // Если уже в режиме управления, определяем направление движения по разнице координат
-        let controlledAI = (betTeam === 'red' ? redAI : blueAI);
-        if (controlledAI && controlledAI.userControlled) {
-          const dx = x - controlledAI.x;
-          const dy = y - controlledAI.y;
-          // Если клик не в той же клетке, задаем направление (ограничиваем шаг до 1 клетки)
-          if (Math.abs(dx) > 0 || Math.abs(dy) > 0) {
-            const moveX = dx !== 0 ? (dx > 0 ? 1 : -1) : 0;
-            const moveY = dy !== 0 ? (dy > 0 ? 1 : -1) : 0;
-            startMove(controlledAI, controlledAI.x + moveX, controlledAI.y + moveY);
-            addLog(`Пользователь: ${controlledAI.color} AI движется ${moveX ? (moveX>0?"вправо":"влево") : ""} ${moveY ? (moveY>0?"вниз":"вверх"):""}`);
-          }
-        }
-      }
-    }
-    
-    // Обработчики для click и touchstart
-    canvas.addEventListener('click', (e) => {
-      handleUserControl(e.clientX, e.clientY);
-    });
-    canvas.addEventListener('touchstart', (e) => {
-      const touch = e.touches[0];
-      handleUserControl(touch.clientX, touch.clientY);
-    });
-    
-    // ---------------- ГЛАВНЫЙ ЦИКЛ ИГРЫ ----------------
-    function startGame() {
-      if (gameRunning) return;
-      if (!betTeam) return alert('Сначала выберите, на кого ставите!');
-      if (betValue <= 0) return alert('Сумма ставки должна быть больше 0!');
-      if (betValue > playerBalance) return alert('Недостаточно средств!');
-      
-      // Списываем ставку
-      playerBalance -= betValue;
-      updateUI();
-      
-      // Генерация коэффициентов (автомат, не меняется Win Multiplier пользователя)
-      redOddsValue  = (1.2 + Math.random() * 1.0).toFixed(2);
-      blueOddsValue = (1.2 + Math.random() * 1.0).toFixed(2);
-      document.getElementById('redOdds').innerText = redOddsValue;
-      document.getElementById('blueOdds').innerText = blueOddsValue;
-      
-      initGrid();
-      
-      // Создаем AI: Красный в левом верхнем, Синий в правом нижнем
-      redAI = createAI(1, 0, 0, 0, 0, globalRedMemory);
-      blueAI = createAI(2, GRID_WIDTH - 1, GRID_HEIGHT - 1, GRID_WIDTH - 1, GRID_HEIGHT - 1, globalBlueMemory);
-      grid[redAI.y][redAI.x] = 1; // база красного
-      grid[blueAI.y][blueAI.x] = 2; // база синего
-      
-      emojiList = [];
-      clearLog();
-      redLastThink = 0; blueLastThink = 0;
-      
-      gameRunning = true;
-      window.lastFrameTime = performance.now();
-      requestAnimationFrame(gameLoop);
-      addLog("Новая битва началась!");
-    }
-    
-    function gameLoop(timestamp) {
-      if (!gameRunning) return;
-      const dt = timestamp - (window.lastFrameTime || timestamp);
-      window.lastFrameTime = timestamp;
-      
-      // Если AI находится на базе, восстанавливаем HP (например, 5 HP в секунду)
-      [redAI, blueAI].forEach(ai => {
-        if (ai && ai.x === ai.baseX && ai.y === ai.baseY && ai.hp < MAX_HP) {
-          ai.hp = Math.min(MAX_HP, ai.hp + (dt / 1000) * 5);
-        }
-      });
-      
-      // Если AI в режиме пользовательского управления – проверяем время
-      [redAI, blueAI].forEach(ai => {
-        if (ai && ai.userControlled && performance.now() > ai.controlEndTime) {
-          ai.userControlled = false;
-          addLog(`${ai.color} AI возобновил автоматическое управление.`);
-        }
-      });
-      
-      // Обновляем анимацию перемещений
-      updateAIPosition(redAI);
-      updateAIPosition(blueAI);
-      
-      // Если AI не под пользовательским управлением, запускаем автономное решение
-      if (redAI && !redAI.userControlled) {
-        redLastThink += dt;
-        if (redLastThink >= aiThinkInterval) { redLastThink = 0; aiDecideMove(redAI, blueAI); }
-      }
-      if (blueAI && !blueAI.userControlled) {
-        blueLastThink += dt;
-        if (blueLastThink >= aiThinkInterval) { blueLastThink = 0; aiDecideMove(blueAI, redAI); }
-      }
-      
-      checkWinCondition();
-      render();
-      
-      if (gameRunning) requestAnimationFrame(gameLoop);
-    }
-    
-    // ---------------- ПЛАВНАЯ АНИМАЦИЯ ПЕРЕМЕЩЕНИЯ ----------------
-    function startMove(ai, nx, ny) {
-      ai.oldX = ai.x;
-      ai.oldY = ai.y;
-      ai.targetX = nx;
-      ai.targetY = ny;
-      ai.moveStartTime = performance.now();
-      // Обновляем логически сразу:
-      ai.x = nx;
-      ai.y = ny;
-    }
-    function updateAIPosition(ai) {
-      if (!ai) return;
-      const now = performance.now();
-      const elapsed = now - ai.moveStartTime;
-      let t = Math.min(elapsed / moveDuration, 1);
-      ai.renderX = ai.oldX + (ai.targetX - ai.oldX) * t;
-      ai.renderY = ai.oldY + (ai.targetY - ai.oldY) * t;
-    }
-    
-    // ---------------- ПОДСЧЕТ ЗАХВАЧЕННЫХ КЛЕТОК ----------------
-    function countTerritory(type) {
-      let count = 0;
-      for (let y = 0; y < GRID_HEIGHT; y++) {
-        for (let x = 0; x < GRID_WIDTH; x++) {
-          if (grid[y][x] === type) count++;
-        }
-      }
-      return count;
-    }
-    
-    // ---------------- ЛОГИКА AI ----------------
-    function aiDecideMove(ai, opponent) {
-      if (ai.hp <= 0) return;
-      // Если анимация не завершена, не решаем новое движение
-      if (performance.now() - ai.moveStartTime < moveDuration) return;
-      
-      // Формируем stateKey, учитывая расстояние до противника и, если HP низкое, расстояние до базы
-      const dx = opponent.x - ai.x;
-      const dy = opponent.y - ai.y;
-      const hpSelf = ai.hp;
-      const hpOpp = opponent.hp;
-      const territorySelf = countTerritory(ai.type);
-      const territoryOpp = countTerritory(opponent.type);
-      let stateKey = dx + ',' + dy + ',' + hpSelf + ',' + hpOpp + ',' + territorySelf + ',' + territoryOpp;
-      if (hpSelf < 30) {
-        const baseDx = ai.baseX - ai.x;
-        const baseDy = ai.baseY - ai.y;
-        stateKey += ',base:' + baseDx + ',' + baseDy;
-      }
-      if (!ai.memory[stateKey]) {
-        ai.memory[stateKey] = { up: 0, down: 0, left: 0, right: 0 };
-      }
-      const mem = ai.memory[stateKey];
-      
-      // Если здоровье очень низкое, AI всё равно не должен постоянно застревать на базе
-      // Поэтому, если HP < 30, выбираем ход, минимизирующий расстояние до базы только если AI не находится уже на базе
-      let moves = [];
-      function tryMove(name, px, py) {
-        const nx = ai.x + px;
-        const ny = ai.y + py;
-        if (nx >= 0 && nx < GRID_WIDTH && ny >= 0 && ny < GRID_HEIGHT) {
-          const weight = mem[name] + Math.random();
-          moves.push({ name, px, py, weight });
-        }
-      }
-      tryMove('up', 0, -1);
-      tryMove('down', 0, 1);
-      tryMove('left', -1, 0);
-      tryMove('right', 1, 0);
-      
-      let bestMove;
-      if (hpSelf < 30 && !(ai.x === ai.baseX && ai.y === ai.baseY)) {
-        // Если здоровье низкое и AI не на базе, выбираем ход, минимизирующий расстояние до базы
-        moves.sort((a, b) => {
-          const distA = Math.abs((ai.x + a.px) - ai.baseX) + Math.abs((ai.y + a.py) - ai.baseY);
-          const distB = Math.abs((ai.x + b.px) - ai.baseX) + Math.abs((ai.y + b.py) - ai.baseY);
-          return distA - distB;
-        });
-        bestMove = moves[0];
-      } else {
-        moves.sort((a, b) => b.weight - a.weight);
-        bestMove = moves[0];
-      }
-      ai.lastAction = { stateKey, direction: bestMove.name };
-      startMove(ai, ai.x + bestMove.px, ai.y + bestMove.py);
-      
-      // По окончании движения обрабатываем столкновение и захват клетки
-      setTimeout(() => {
-        if (!gameRunning || ai.hp <= 0) return;
-        if (ai.x === opponent.x && ai.y === opponent.y && opponent.hp > 0) {
-          const dmgAI = Math.floor(Math.random() * 20);
-          const dmgOpp = Math.floor(Math.random() * 20);
-          ai.hp = Math.max(0, ai.hp - dmgAI);
-          opponent.hp = Math.max(0, opponent.hp - dmgOpp);
-          showEmoji(ai, '💥');
-          showEmoji(opponent, '💥');
-          const reward = (dmgOpp - dmgAI) * 0.1;
-          mem[bestMove.name] += reward;
-          addLog(`Схватка! ${ai.color} получил ${dmgAI}, противник ${dmgOpp}.`);
-        }
-        // Захват клетки
-        const oldControl = grid[ai.y][ai.x];
-        if (oldControl !== ai.type) {
-          if (oldControl !== 0 && oldControl !== ai.type) {
-            showEmoji(ai, '😎');
-            showEmoji(opponent, '😡');
-            mem[bestMove.name] += 0.5;
-            addLog(`${ai.color} захватил клетку у соперника!`);
-          }
-          grid[ai.y][ai.x] = ai.type;
-        }
-      }, moveDuration);
-    }
-    
-    // ---------------- ПРОВЕРКА ПОБЕДЫ ----------------
-    function checkWinCondition() {
-      if (grid[redAI.baseY][redAI.baseX] === 2 || redAI.hp <= 0) {
-        endGame('blue');
-      } else if (grid[blueAI.baseY][blueAI.baseX] === 1 || blueAI.hp <= 0) {
-        endGame('red');
-      }
-    }
-    
-    // ---------------- ЗАВЕРШЕНИЕ ИГРЫ ----------------
-    function endGame(winner) {
-      if (!gameRunning) return;
-      gameRunning = false;
-      saveAIMemory();
-      // Вычисление выигрыша с учетом пользовательского множителя
-      let customMultiplier = parseFloat(document.getElementById('winMultiplier').value) || 1.0;
-      if (winner === betTeam) {
-        const odds = (winner === 'red') ? parseFloat(redOddsValue) : parseFloat(blueOddsValue);
-        const winAmount = Math.floor(betValue * odds * customMultiplier);
-        playerBalance += winAmount;
-        alert(`Победил ${winner === 'red' ? 'Красный' : 'Синий'}! Вы выиграли ${winAmount} C!`);
-      } else {
-        alert(`Победил ${winner === 'red' ? 'Красный' : 'Синий'}! Вы проиграли ставку.`);
-      }
-      betTeam = null;
-      betValue = 0;
-      updateUI();
-    }
-    
-    // ---------------- ЛОГИРОВАНИЕ СОБЫТИЙ ----------------
-    function addLog(msg) {
-      const p = document.createElement('p');
-      p.textContent = msg;
-      logPanel.appendChild(p);
-      logPanel.scrollTop = logPanel.scrollHeight;
-    }
-    function clearLog() { logPanel.innerHTML = ""; }
-    
-    // ---------------- ЭМОЦИИ ----------------
-    function showEmoji(ai, symbol) {
-      emojiList.push({
-        x: ai.x,
-        y: ai.y,
-        symbol: symbol,
-        time: Date.now(),
-        duration: 1500
-      });
-    }
-    
-    // ---------------- РЕНДЕР ----------------
-    function render() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // Рисуем сетку
-      for (let y = 0; y < GRID_HEIGHT; y++) {
-        for (let x = 0; x < GRID_WIDTH; x++) {
-          let color = '#444';
-          if (grid[y][x] === 1) color = 'red';
-          else if (grid[y][x] === 2) color = 'blue';
-          ctx.fillStyle = color;
-          ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-        }
-      }
-      // Рисуем AI
-      drawAI(redAI);
-      drawAI(blueAI);
-      // Рисуем HP-бары
-      drawHPBar(redAI);
-      drawHPBar(blueAI);
-      // Рисуем эмоции
-      drawEmojis();
-    }
-    function drawAI(ai) {
-      if (!ai || ai.hp <= 0) return;
-      const px = (ai.renderX ?? ai.x) * CELL_SIZE;
-      const py = (ai.renderY ?? ai.y) * CELL_SIZE;
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(px + 2, py + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-    }
-    function drawHPBar(ai) {
-      if (!ai || ai.hp <= 0) return;
-      const px = (ai.renderX ?? ai.x) * CELL_SIZE;
-      const py = (ai.renderY ?? ai.y) * CELL_SIZE;
-      const barWidth = CELL_SIZE - 4;
-      const barHeight = 5;
-      const barX = px + 2;
-      const barY = py - 8;
-      ctx.fillStyle = '#000';
-      ctx.fillRect(barX, barY, barWidth, barHeight);
-      const hpPercent = ai.hp / MAX_HP;
-      ctx.fillStyle = ai.color === 'red' ? '#ff5555' : '#55aaff';
-      ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
-    }
-    function drawEmojis() {
-      const now = Date.now();
-      emojiList = emojiList.filter(e => now - e.time < e.duration);
-      ctx.font = '20px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      for (const emo of emojiList) {
-        const t = (now - emo.time) / 1500;
-        ctx.globalAlpha = 1 - t;
-        const px = emo.x * CELL_SIZE + CELL_SIZE / 2;
-        const py = emo.y * CELL_SIZE - 20 - 20 * t;
-        ctx.fillText(emo.symbol, px, py);
-      }
-      ctx.globalAlpha = 1;
-    }
-    /* Для экранов 1440x2560 (QHD) */
-@media screen and (max-width: 1440px) and (max-height: 2560px) {
-  .arena {
-    width: 100vw; /* Растягиваем арену на всю ширину */
-    height: 100vh; /* Растягиваем арену на всю высоту */
-  }
-}
-    const canvas = document.getElementById("arenaCanvas");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
 
-window.addEventListener("resize", () => {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-});
+    <script>
+        const GRID_SIZE = 20;
+        const CELL_SIZE = 32;
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const logPanel = document.getElementById('logPanel');
 
-/* Для экранов 1080x1920 (FHD) */
-@media screen and (max-width: 1080px) and (max-height: 1920px) {
-  .arena {
-    width: 100vw;
-    height: 100vh;
-  }
-    }
-    
-    
-    // ---------------- ИНИЦИАЛЬНАЯ ИНИЦИАЛИЗАЦИЯ ----------------
-    updateUI();
-    redOddsValue  = (1.2 + Math.random() * 1.0).toFixed(2);
-    blueOddsValue = (1.2 + Math.random() * 1.0).toFixed(2);
-    document.getElementById('redOdds').innerText = redOddsValue;
-    document.getElementById('blueOdds').innerText = blueOddsValue;
-  </script>
+        let grid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+        let redAI = { x: 0, y: 0, territory: 0, emotions: [] };
+        let blueAI = { x: GRID_SIZE-1, y: GRID_SIZE-1, territory: 0, emotions: [] };
+        let playerBalance = 10000;
+        let betTeam = null;
+        let betAmount = 0;
+        let odds = 1;
+
+        function initGame() {
+            grid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+            redAI = { x: 0, y: 0, territory: 0, emotions: [] };
+            blueAI = { x: GRID_SIZE-1, y: GRID_SIZE-1, territory: 0, emotions: [] };
+            grid[redAI.y][redAI.x] = 1;
+            grid[blueAI.y][blueAI.x] = 2;
+        }
+
+        function betOn(team) {
+            betAmount = parseInt(document.getElementById('betAmount').value);
+            odds = parseInt(document.getElementById('odds').value);
+            if (isNaN(betAmount) || isNaN(odds) || betAmount > playerBalance) return;
+            betTeam = team;
+            playerBalance -= betAmount;
+            document.getElementById('balance').textContent = `${playerBalance}C`;
+        }
+
+        function startGame() {
+            if (!betTeam) return;
+            initGame();
+            gameLoop();
+        }
+
+        function gameLoop() {
+            updateAI(redAI, 1);
+            updateAI(blueAI, 2);
+            checkVictory();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updateAI(ai, team) {
+            const emptyCells = getEmptyNeighbors(ai.x, ai.y);
+            if (emptyCells.length > 0) {
+                const move = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                grid[ai.y][ai.x] = team;
+                ai.x = move.x;
+                ai.y = move.y;
+                ai.territory++;
+                addEmotion(ai, team === 1 ? '😡' : '😠');
+            }
+        }
+
+        function getEmptyNeighbors(x, y) {
+            const neighbors = [];
+            [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy]) => {
+                const nx = x + dx;
+                const ny = y + dy;
+                if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE && grid[ny][nx] === 0) {
+                    neighbors.push({ x: nx, y: ny });
+                }
+            });
+            return neighbors;
+        }
+
+        function addEmotion(ai, emoji) {
+            ai.emotions.push({ symbol: emoji, time: Date.now() });
+            ai.emotions = ai.emotions.filter(e => Date.now() - e.time < 2000);
+        }
+
+        function checkVictory() {
+            if (redAI.x === blueAI.x && redAI.y === blueAI.y) {
+                endGame(redAI.territory > blueAI.territory ? 'red' : 'blue');
+            }
+        }
+
+        function endGame(winner) {
+            if (winner === betTeam) {
+                playerBalance += betAmount * odds;
+                addLog(`Вы выиграли! Ваш баланс: ${playerBalance}C`);
+            } else {
+                addLog(`Вы проиграли. Ваш баланс: ${playerBalance}C`);
+            }
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Отрисовка поля
+            grid.forEach((row, y) => {
+                row.forEach((cell, x) => {
+                    ctx.fillStyle = cell === 1 ? '#e74c3c' : cell === 2 ? '#3498db' : '#34495e';
+                    ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                });
+            });
+
+            // Отрисовка AI
+            drawAI(redAI, '#e74c3c');
+            drawAI(blueAI, '#3498db');
+
+            // Отрисовка эмоций
+            redAI.emotions.forEach(e => drawEmoji(e.symbol, redAI.x, redAI.y));
+            blueAI.emotions.forEach(e => drawEmoji(e.symbol, blueAI.x, blueAI.y));
+        }
+
+        function drawAI(ai, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(ai.x * CELL_SIZE + CELL_SIZE/2, ai.y * CELL_SIZE + CELL_SIZE/2, 12, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        function drawEmoji(symbol, x, y) {
+            ctx.font = '24px Arial';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(symbol, x * CELL_SIZE + CELL_SIZE/2, y * CELL_SIZE + CELL_SIZE/2);
+        }
+
+        function addLog(text) {
+            const p = document.createElement('p');
+            p.textContent = text;
+            logPanel.appendChild(p);
+            logPanel.scrollTop = logPanel.scrollHeight;
+        }
+    </script>
 </body>
 </html>
